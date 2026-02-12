@@ -2,9 +2,9 @@
 
 A layered Tic-Tac-Toe project with:
 
-- a Flask backend API,
-- a simple browser UI,
-- a Minimax-based computer opponent.
+- Flask backend API,
+- simple browser UI,
+- Minimax-based computer opponent.
 
 ## What You Can Run
 
