@@ -1,40 +1,55 @@
-# Tic-Tac-Toe Game API
+﻿# Tic-Tac-Toe (Flask + Minimax)
 
-A RESTful API for playing Tic-Tac-Toe against an AI opponent using the Minimax algorithm.
+A layered Tic-Tac-Toe project with:
 
-## Features
+- a Flask backend API,
+- a simple browser UI,
+- a Minimax-based computer opponent.
 
-- **Minimax Algorithm**: Optimal AI opponent that never loses
-- **Concurrent Games**: Support for multiple simultaneous games
-- **Thread-Safe**: Designed for concurrent access
-- **Layered Architecture**: Clean separation of concerns
-- **REST API**: Simple HTTP interface
+## What You Can Run
 
-## Quick Start
+- Web UI: `GET /`
+- Health check: `GET /health`
+- Game move API: `POST /game/<uuid>`
 
-### Installation
+## Requirements
+
+- Python 3.10+
+- `flask`
+
+Install dependency:
 
 ```bash
 pip install flask
 ```
 
-### Running the Application
+## Run
+
+From the project root:
 
 ```bash
-python -m web.module.app
+python main.py
 ```
 
-The API will be available at `http://localhost:5000`
+Server starts on:
 
-## API Endpoints
+- `http://localhost:5000/`
 
-### Create/Update Game
+## Play in Browser
 
-**Endpoint**: `POST /game/{uuid}`
+1. Open `http://localhost:5000/`.
+2. Click a cell to place `X`.
+3. The server responds with the AI move (`O`).
+4. Click **New game** to reset.
 
-**Description**: Submit a move and receive the computer's response
+## API
 
-**Request Body**:
+### `POST /game/<uuid>`
+
+Submit the current board after the human move and receive the updated board after the AI move.
+
+Request example:
+
 ```json
 {
   "uuid": "123e4567-e89b-12d3-a456-426614174000",
@@ -46,43 +61,52 @@ The API will be available at `http://localhost:5000`
 }
 ```
 
-**Response Body**:
+Successful response example:
+
 ```json
 {
   "uuid": "123e4567-e89b-12d3-a456-426614174000",
   "board": [
-    [0, 0, 0],
+    [2, 0, 0],
     [0, 1, 0],
-    [2, 0, 0]
+    [0, 0, 0]
   ]
 }
 ```
 
-**Board Values**:
-- `0`: Empty cell
-- `1`: X (human player)
-- `2`: O (computer player)
+Possible extra fields when a game finishes:
+
+```json
+{
+  "game_over": true,
+  "winner": "Human wins (X)"
+}
+```
+
+### `GET /health`
+
+Response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+## Board Encoding
+
+- `0` = empty
+- `1` = human (`X`)
+- `2` = computer (`O`)
 
 ## Architecture
 
-This project follows a **layered architecture** pattern:
+The project uses a layered structure:
 
-- **Web Layer**: HTTP handling and routing
-- **Domain Layer**: Business logic and game rules
-- **Datasource Layer**: Data persistence and storage
-- **DI Layer**: Dependency injection and configuration
-
-For detailed architecture documentation, see [project_structure.md](project_structure.md)
-
-## Project Structure
-
-```
-tic-tac-toe/
-├── web/              # Presentation layer
-├── domain/           # Business logic layer
-├── datasource/       # Data access layer
-└── di/               # Dependency injection
-```
+- `web/` - HTTP layer (routes, app module, web models/mappers)
+- `domain/` - game rules and core services
+- `datasource/` - persistence abstractions and implementations
+- `di/` - dependency wiring
 
 ## License
 

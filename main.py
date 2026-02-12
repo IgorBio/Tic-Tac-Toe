@@ -3,9 +3,7 @@
 import sys
 sys.path.insert(0, '.')
 
-from datasource.repository.game_storage import GameStorage
-from datasource.repository.game_repository_impl import GameRepositoryImpl
-from domain.service.game_service_impl import GameServiceImpl
+from di.container import Container
 from web.module.app import run_app
 
 
@@ -13,16 +11,13 @@ def main():
     """
     Initialize dependencies and start the Flask application.
     
-    This is a temporary implementation until the DI layer is complete.
+    Uses the DI container to manage all dependencies.
     """
-    # Create singleton storage
-    storage = GameStorage()
+    # Create DI container
+    container = Container()
     
-    # Create repository with storage
-    repository = GameRepositoryImpl(storage)
-    
-    # Create service with repository
-    game_service = GameServiceImpl(repository)
+    # Get game service (with all dependencies injected)
+    game_service = container.service
     
     # Run Flask app
     print("Starting Tic-Tac-Toe API server...")

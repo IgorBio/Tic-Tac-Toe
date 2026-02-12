@@ -1,0 +1,226 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tic-Tac-Toe</title>
+  <style>
+    :root {
+      --bg: #f4efe3;
+      --panel: #fff9ec;
+      --line: #2f2a24;
+      --x: #1d4ed8;
+      --o: #b91c1c;
+      --btn: #2f2a24;
+      --btn-text: #fff9ec;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: radial-gradient(circle at top, #fff9ec 0%, var(--bg) 65%);
+      color: var(--line);
+      padding: 24px;
+    }
+
+    .app {
+      width: min(92vw, 480px);
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 14px 24px rgba(47, 42, 36, 0.15);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 0.02em;
+    }
+
+    .status {
+      min-height: 24px;
+      margin: 0 0 14px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: clamp(36px, 8vw, 52px);
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.08s ease;
+    }
+
+    .cell:hover:enabled {
+      transform: translateY(-1px);
+    }
+
+    .cell:disabled {
+      cursor: default;
+    }
+
+    .x { color: var(--x); }
+    .o { color: var(--o); }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button.primary {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      background: var(--btn);
+      color: var(--btn-text);
+      cursor: pointer;
+    }
+
+    code {
+      font-size: 12px;
+      background: #efe7d8;
+      padding: 3px 6px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>Tic-Tac-Toe</h1>
+    <p id="status" class="status">Your turn: play X.</p>
+
+    <section id="board" class="board" aria-label="Tic-Tac-Toe board"></section>
+
+    <div class="actions">
+      <button id="newGame" class="primary" type="button">New game</button>
+      <code id="gameId"></code>
+    </div>
+  </main>
+
+  <script>
+    const boardElement = document.getElementById('board');
+    const statusElement = document.getElementById('status');
+    const gameIdElement = document.getElementById('gameId');
+    const newGameButton = document.getElementById('newGame');
+
+    let gameId = null;
+    let board = null;
+    let gameOver = false;
+    let busy = false;
+
+    function createUuid() {
+      if (window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
+      }
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    }
+
+    function resetGame() {
+      gameId = createUuid();
+      board = [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+      ];
+      gameOver = false;
+      busy = false;
+      gameIdElement.textContent = gameId;
+      statusElement.textContent = 'Your turn: play X.';
+      render();
+    }
+
+    function render() {
+      boardElement.innerHTML = '';
+      for (let row = 0; row < 3; row += 1) {
+        for (let col = 0; col < 3; col += 1) {
+          const value = board[row][col];
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'cell';
+          button.disabled = value !== 0 || gameOver || busy;
+          if (value === 1) {
+            button.textContent = 'X';
+            button.classList.add('x');
+          } else if (value === 2) {
+            button.textContent = 'O';
+            button.classList.add('o');
+          }
+          button.addEventListener('click', () => onMove(row, col));
+          boardElement.appendChild(button);
+        }
+      }
+    }
+
+    async function onMove(row, col) {
+      if (busy || gameOver || board[row][col] !== 0) {
+        return;
+      }
+
+      board[row][col] = 1;
+      busy = true;
+      statusElement.textContent = 'Computer is thinking...';
+      render();
+
+      try {
+        const response = await fetch(`/game/${gameId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uuid: gameId, board }),
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok) {
+          const errorMessage = payload && payload.message ? payload.message : 'Request failed.';
+          statusElement.textContent = `Error: ${errorMessage}`;
+          busy = false;
+          render();
+          return;
+        }
+
+        board = payload.board;
+
+        if (payload.game_over) {
+          gameOver = true;
+          statusElement.textContent = `Game over: ${payload.winner || 'Finished'}`;
+        } else {
+          statusElement.textContent = 'Your turn: play X.';
+        }
+      } catch (error) {
+        statusElement.textContent = `Network error: ${error.message}`;
+      } finally {
+        busy = false;
+        render();
+      }
+    }
+
+    newGameButton.addEventListener('click', resetGame);
+    resetGame();
+  </script>
+</body>
+</html>
